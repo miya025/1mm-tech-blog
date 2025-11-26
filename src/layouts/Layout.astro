@@ -1,0 +1,82 @@
+---
+import Head from '@/components/SEO/Head.astro';
+import { SITE_CONFIG } from '@/site-config';
+import '@/styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  article?: boolean;
+  publishedTime?: string;
+}
+
+const props = Astro.props;
+---
+
+<!doctype html>
+<html lang={SITE_CONFIG.lang}>
+  <head>
+    <Head {...props} />
+  </head>
+  <body>
+    <div class="min-h-screen flex flex-col">
+      <!-- Header -->
+      <header class="border-b border-gray-200">
+        <nav class="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between">
+          <a href="/" class="text-2xl font-bold text-gray-900 hover:text-gray-700">
+            {SITE_CONFIG.title}
+          </a>
+          <div class="flex gap-6">
+            {SITE_CONFIG.nav.map((item) => (
+              <a
+                href={item.href}
+                class="text-gray-600 hover:text-gray-900 font-medium"
+              >
+                {item.name}
+              </a>
+            ))}
+          </div>
+        </nav>
+      </header>
+
+      <!-- Main Content -->
+      <main class="flex-1">
+        <slot />
+      </main>
+
+      <!-- Footer -->
+      <footer class="border-t border-gray-200 mt-12">
+        <div class="max-w-4xl mx-auto px-4 py-8">
+          <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="text-gray-600 text-sm">
+              © {new Date().getFullYear()} {SITE_CONFIG.author}. All rights reserved.
+            </p>
+            <div class="flex gap-4">
+              {SITE_CONFIG.social.twitter && (
+                <a
+                  href={SITE_CONFIG.social.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-gray-600 hover:text-gray-900"
+                >
+                  Twitter
+                </a>
+              )}
+              {SITE_CONFIG.social.github && (
+                <a
+                  href={SITE_CONFIG.social.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-gray-600 hover:text-gray-900"
+                >
+                  GitHub
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

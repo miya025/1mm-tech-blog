@@ -1,0 +1,79 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import { getPosts } from '@/lib/notion/client';
+
+const posts = await getPosts();
+---
+
+<Layout>
+  <div class="max-w-4xl mx-auto px-4 py-12">
+    <h1 class="text-4xl font-bold mb-8">Blog Posts</h1>
+
+    {posts.length === 0 ? (
+      <div class="text-center py-12">
+        <p class="text-gray-600 text-lg">No published posts yet.</p>
+        <p class="text-gray-500 text-sm mt-2">
+          Check your Notion database and make sure you have posts with Status = "Published"
+        </p>
+      </div>
+    ) : (
+      <div class="grid gap-8">
+        {posts.map((post) => (
+          <article class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+            <a href={`/${post.slug}`} class="block">
+              {post.coverImage && (
+                <div class="aspect-video overflow-hidden bg-gray-100">
+                  <img
+                    src={post.coverImage}
+                    alt={post.title}
+                    class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              <div class="p-6">
+                <div class="flex items-center gap-3 mb-3 text-sm text-gray-600">
+                  {post.publishedDate && (
+                    <time datetime={post.publishedDate}>
+                      {new Date(post.publishedDate).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </time>
+                  )}
+                  {post.author && (
+                    <>
+                      <span>•</span>
+                      <span>{post.author}</span>
+                    </>
+                  )}
+                </div>
+
+                <h2 class="text-2xl font-bold mb-2 text-gray-900 hover:text-blue-600 transition-colors">
+                  {post.title}
+                </h2>
+
+                {post.excerpt && (
+                  <p class="text-gray-600 mb-4 line-clamp-3">
+                    {post.excerpt}
+                  </p>
+                )}
+
+                {post.tags.length > 0 && (
+                  <div class="flex flex-wrap gap-2">
+                    {post.tags.map((tag) => (
+                      <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</Layout>

@@ -1,0 +1,94 @@
+---
+import type { NotionBlock } from '@/lib/notion/types';
+
+interface Props {
+  blocks: NotionBlock[];
+}
+
+const { blocks } = Astro.props;
+
+function renderRichText(richText: any[]): string {
+  if (!richText || richText.length === 0) return '';
+
+  return richText
+    .map((text) => {
+      let content = text.plain_text;
+
+      if (text.annotations.bold) content = `<strong>${content}</strong>`;
+      if (text.annotations.italic) content = `<em>${content}</em>`;
+      if (text.annotations.code) content = `<code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">${content}</code>`;
+      if (text.annotations.strikethrough) content = `<del>${content}</del>`;
+      if (text.href) content = `<a href="${text.href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">${content}</a>`;
+
+      return content;
+    })
+    .join('');
+}
+---
+
+<div class="notion-content space-y-4">
+  {blocks.map((block) => {
+    const type = block.type;
+    const content = block[type];
+
+    switch (type) {
+      case 'paragraph':
+        return (
+          <p class="text-gray-700 leading-relaxed" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'heading_1':
+        return (
+          <h1 class="text-3xl font-bold mt-8 mb-4" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'heading_2':
+        return (
+          <h2 class="text-2xl font-bold mt-6 mb-3" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'heading_3':
+        return (
+          <h3 class="text-xl font-bold mt-4 mb-2" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'bulleted_list_item':
+        return (
+          <li class="ml-6 list-disc text-gray-700" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'numbered_list_item':
+        return (
+          <li class="ml-6 list-decimal text-gray-700" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'quote':
+        return (
+          <blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4" set:html={renderRichText(content.rich_text)} />
+        );
+
+      case 'code':
+        const language = content.language || 'text';
+        const code = content.rich_text.map((t: any) => t.plain_text).join('');
+        return (
+          <pre class="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto my-4"><code class={`language-${language}`}>{code}</code></pre>
+        );
+
+      case 'image':
+        const imageUrl = content.type === 'external' ? content.external.url : content.file.url;
+        const caption = content.caption.length > 0 ? renderRichText(content.caption) : '';
+        return (
+          <figure class="my-6">
+            <img src={imageUrl} alt={caption || 'Image'} class="w-full rounded-lg" loading="lazy" />
+            {caption && <figcaption class="text-sm text-gray-500 mt-2 text-center" set:html={caption} />}
+          </figure>
+        );
+
+      case 'divider':
+        return <hr class="my-8 border-gray-200" />;
+
+      default:
+        return null;
+    }
+  })}
+</div>

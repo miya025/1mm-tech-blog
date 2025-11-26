@@ -1,0 +1,93 @@
+---
+import Layout from '@/layouts/Layout.astro';
+import NotionBlocks from '@/components/Notion/NotionBlocks.astro';
+import { getPosts, getPostBySlug, getPageBlocks } from '@/lib/notion/client';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { slug } = Astro.params;
+const { post } = Astro.props;
+
+if (!post) {
+  return Astro.redirect('/404');
+}
+
+const blocks = await getPageBlocks(post.id);
+---
+
+<Layout
+  title={post.title}
+  description={post.excerpt || undefined}
+  image={post.coverImage || undefined}
+  article={true}
+  publishedTime={post.publishedDate || undefined}
+>
+  <article class="max-w-3xl mx-auto px-4 py-12">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+        {post.title}
+      </h1>
+
+      <div class="flex items-center gap-4 text-gray-600 mb-6">
+        {post.publishedDate && (
+          <time datetime={post.publishedDate}>
+            {new Date(post.publishedDate).toLocaleDateString('ja-JP', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </time>
+        )}
+        {post.author && (
+          <>
+            <span>•</span>
+            <span>{post.author}</span>
+          </>
+        )}
+      </div>
+
+      {post.tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-6">
+          {post.tags.map((tag) => (
+            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full">
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {post.coverImage && (
+        <div class="aspect-video overflow-hidden rounded-lg mb-8">
+          <img
+            src={post.coverImage}
+            alt={post.title}
+            class="w-full h-full object-cover"
+          />
+        </div>
+      )}
+    </header>
+
+    <!-- Content -->
+    <div class="prose prose-lg max-w-none">
+      <NotionBlocks blocks={blocks} />
+    </div>
+
+    <!-- Back to Home -->
+    <div class="mt-12 pt-8 border-t border-gray-200">
+      <a
+        href="/"
+        class="text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-2"
+      >
+        ← Back to all posts
+      </a>
+    </div>
+  </article>
+</Layout>
