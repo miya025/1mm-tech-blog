@@ -27,7 +27,7 @@ export async function getPosts(): Promise<NotionPost[]> {
       },
       sorts: [
         {
-          property: 'PublishedDate',
+          property: 'Published Date',
           direction: 'descending',
         },
       ],
@@ -131,8 +131,8 @@ function parseNotionPage(page: PageObjectResponse): NotionPost | null {
       ? statusProp.select.name as 'Draft' | 'Published'
       : 'Draft';
 
-    // PublishedDate
-    const dateProp = properties.PublishedDate;
+    // Published Date
+    const dateProp = properties['Published Date'];
     const publishedDate = dateProp?.type === 'date' && dateProp.date?.start
       ? dateProp.date.start
       : null;
@@ -149,8 +149,8 @@ function parseNotionPage(page: PageObjectResponse): NotionPost | null {
       ? excerptProp.rich_text[0].plain_text
       : null;
 
-    // CoverImage
-    const coverProp = properties.CoverImage;
+    // Cover Image
+    const coverProp = properties['Cover Image'];
     let coverImage: string | null = null;
     if (coverProp?.type === 'files' && coverProp.files.length > 0) {
       const file = coverProp.files[0];
@@ -163,9 +163,13 @@ function parseNotionPage(page: PageObjectResponse): NotionPost | null {
 
     // Author
     const authorProp = properties.Author;
-    const author = authorProp?.type === 'people' && authorProp.people.length > 0
-      ? authorProp.people[0].name || null
-      : null;
+    let author: string | null = null;
+    if (authorProp?.type === 'people' && authorProp.people.length > 0) {
+      const person = authorProp.people[0];
+      if ('name' in person) {
+        author = person.name || null;
+      }
+    }
 
     const post = {
       id: page.id,
