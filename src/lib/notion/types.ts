@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+// CTA Schema (Pro版: RelatedCTAリレーションから取得)
+export const CTASchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  buttonText: z.string(),
+  buttonUrl: z.string(),
+  backgroundColor: z.string().nullable(),
+});
+
+export type CTA = z.infer<typeof CTASchema>;
+
 // Notion Database Property Schema
 export const NotionPostSchema = z.object({
   id: z.string(),
@@ -11,6 +23,9 @@ export const NotionPostSchema = z.object({
   excerpt: z.string().nullable(),
   coverImage: z.string().nullable(),
   author: z.string().nullable(),
+  // Pro版専用プロパティ
+  isAdSense: z.boolean().default(false),
+  relatedCTA: z.array(CTASchema).default([]),
 });
 
 export type NotionPost = z.infer<typeof NotionPostSchema>;

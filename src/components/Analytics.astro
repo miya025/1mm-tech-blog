@@ -1,0 +1,45 @@
+---
+/**
+ * Analytics.astro
+ * Pro版: Google Analytics (GA4) / Google Tag Manager 統合
+ *
+ * 環境変数で設定を制御:
+ * - PUBLIC_GA_ID: Google Analytics 4 測定ID (G-XXXXXXXXXX)
+ * - PUBLIC_GTM_ID: Google Tag Manager コンテナID (GTM-XXXXXXX)
+ *
+ * どちらか一方、または両方を設定可能。
+ * 未設定の場合は何も出力しない。
+ */
+
+const gaId = import.meta.env.PUBLIC_GA_ID;
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+
+const hasGA = Boolean(gaId);
+const hasGTM = Boolean(gtmId);
+---
+
+{/* Google Tag Manager - Head部分 */}
+{hasGTM && (
+  <script is:inline define:vars={{ gtmId }}>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer',gtmId);
+  </script>
+)}
+
+{/* Google Analytics 4 (gtag.js) */}
+{hasGA && !hasGTM && (
+  <>
+    <script is:inline define:vars={{ gaId }} src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} async></script>
+    <script is:inline define:vars={{ gaId }}>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', gaId);
+    </script>
+  </>
+)}
+
+{/* Note: GTM noscript部分はLayout.astroのbody直後に別途配置が必要 */}
