@@ -1,0 +1,23 @@
+---
+/**
+ * AnalyticsBody.astro
+ * Pro版: Google Tag Manager noscript部分（body直後に配置）
+ *
+ * 環境変数 PUBLIC_GTM_ID が設定されている場合のみ出力
+ */
+
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+const hasGTM = Boolean(gtmId);
+---
+
+{/* Google Tag Manager (noscript) - body直後に配置 */}
+{hasGTM && (
+  <noscript>
+    <iframe
+      src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+      height="0"
+      width="0"
+      style="display:none;visibility:hidden"
+    ></iframe>
+  </noscript>
+)}
