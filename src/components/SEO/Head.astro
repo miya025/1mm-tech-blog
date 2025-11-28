@@ -1,5 +1,6 @@
 ---
 import { SITE_CONFIG } from '@/site-config';
+import JsonLD from './JsonLD.astro';
 
 interface Props {
   title?: string;
@@ -8,6 +9,8 @@ interface Props {
   article?: boolean;
   publishedTime?: string;
   slug?: string;
+  author?: string;
+  tags?: string[];
 }
 
 const {
@@ -17,6 +20,8 @@ const {
   article = false,
   publishedTime,
   slug,
+  author,
+  tags = [],
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -66,5 +71,20 @@ const ogImageURL = slug
 <!-- Sitemap -->
 <link rel="sitemap" href="/sitemap-index.xml" />
 
+<!-- RSS Feed -->
+<link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS Feed`} href="/feed.xml" />
+
 <!-- Theme Color -->
 <meta name="theme-color" content="#ffffff" />
+
+<!-- JSON-LD Structured Data -->
+<JsonLD
+  type={article ? 'article' : 'website'}
+  title={title}
+  description={description}
+  image={image}
+  publishedTime={publishedTime}
+  author={author}
+  slug={slug}
+  tags={tags}
+/>
