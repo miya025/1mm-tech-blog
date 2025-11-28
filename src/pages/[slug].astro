@@ -1,6 +1,8 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import NotionBlocks from '@/components/Notion/NotionBlocks.astro';
+import AdSense from '@/components/Pro/AdSense.astro';
+import CTA from '@/components/Pro/CTA.astro';
 import { getPosts, getPageBlocks } from '@/lib/notion/client';
 
 // SSGとしてビルド時に静的生成 (Astro v5)
@@ -22,6 +24,15 @@ if (!post) {
 }
 
 const blocks = await getPageBlocks(post.id);
+
+// Pro版: 記事内広告の挿入位置を計算（本文の約40%地点）
+const adInsertIndex = post.isAdSense
+  ? Math.floor(blocks.length * 0.4)
+  : -1;
+
+// ブロックを広告の前後で分割
+const blocksBeforeAd = adInsertIndex > 0 ? blocks.slice(0, adInsertIndex) : blocks;
+const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
 ---
 
 <Layout
@@ -95,8 +106,26 @@ const blocks = await getPageBlocks(post.id);
     <!-- Content -->
     <div class="max-w-3xl mx-auto">
       <div class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md">
-        <NotionBlocks blocks={blocks} />
+        {post.isAdSense && blocksAfterAd.length > 0 ? (
+          <>
+            <NotionBlocks blocks={blocksBeforeAd} />
+            <!-- Pro版: 記事内広告 -->
+            <AdSense position="in-article" />
+            <NotionBlocks blocks={blocksAfterAd} />
+          </>
+        ) : (
+          <NotionBlocks blocks={blocks} />
+        )}
       </div>
+
+      {/* Pro版: CTA表示 */}
+      {post.relatedCTA.length > 0 && (
+        <div class="mt-12">
+          {post.relatedCTA.map((cta) => (
+            <CTA cta={cta} />
+          ))}
+        </div>
+      )}
     </div>
 
     <!-- Back to Home -->

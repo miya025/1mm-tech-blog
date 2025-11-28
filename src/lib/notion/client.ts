@@ -1,6 +1,6 @@
 import { Client } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
-import { NotionPostSchema, type NotionPost, type NotionBlock } from './types';
+import { NotionPostSchema, type NotionPost, type NotionBlock, type CTA } from './types';
 
 const notion = new Client({
   auth: import.meta.env.NOTION_TOKEN,
@@ -33,10 +33,11 @@ export async function getPosts(): Promise<NotionPost[]> {
       ],
     });
 
-    const posts = response.results.map((page) => {
+    const postPromises = response.results.map((page) => {
       return parseNotionPage(page as PageObjectResponse);
     });
 
+    const posts = await Promise.all(postPromises);
     return posts.filter((post): post is NotionPost => post !== null);
   } catch (error) {
     console.error('Failed to fetch posts from Notion:', error);
@@ -77,7 +78,7 @@ export async function getPostBySlug(slug: string): Promise<NotionPost | null> {
       return null;
     }
 
-    return parseNotionPage(response.results[0] as PageObjectResponse);
+    return await parseNotionPage(response.results[0] as PageObjectResponse);
   } catch (error) {
     console.error(`Failed to fetch post with slug "${slug}":`, error);
     return null;
@@ -108,7 +109,7 @@ export async function getPostBySlugForPreview(slug: string): Promise<NotionPost 
       return null;
     }
 
-    return parseNotionPage(response.results[0] as PageObjectResponse);
+    return await parseNotionPage(response.results[0] as PageObjectResponse);
   } catch (error) {
     console.error(`Failed to fetch preview post with slug "${slug}":`, error);
     return null;
@@ -133,9 +134,69 @@ export async function getPageBlocks(pageId: string): Promise<NotionBlock[]> {
 }
 
 /**
+ * CTA管理DBからCTAデータを取得
+ * Pro版専用機能
+ */
+async function fetchCTAData(pageIds: string[]): Promise<CTA[]> {
+  if (pageIds.length === 0) return [];
+
+  const ctaPromises = pageIds.map(async (pageId) => {
+    try {
+      const page = await notion.pages.retrieve({ page_id: pageId }) as PageObjectResponse;
+      const properties = page.properties;
+
+      // Title
+      const titleProp = properties.Title || properties.Name;
+      const title = titleProp?.type === 'title' && titleProp.title.length > 0
+        ? titleProp.title[0].plain_text
+        : 'CTA';
+
+      // Description
+      const descProp = properties.Description;
+      const description = descProp?.type === 'rich_text' && descProp.rich_text.length > 0
+        ? descProp.rich_text[0].plain_text
+        : null;
+
+      // Button Text
+      const buttonTextProp = properties['Button Text'];
+      const buttonText = buttonTextProp?.type === 'rich_text' && buttonTextProp.rich_text.length > 0
+        ? buttonTextProp.rich_text[0].plain_text
+        : '詳しくはこちら';
+
+      // Button URL
+      const buttonUrlProp = properties['Button URL'];
+      const buttonUrl = buttonUrlProp?.type === 'url' && buttonUrlProp.url
+        ? buttonUrlProp.url
+        : '#';
+
+      // Background Color
+      const bgColorProp = properties['Background Color'];
+      const backgroundColor = bgColorProp?.type === 'select' && bgColorProp.select?.name
+        ? bgColorProp.select.name
+        : null;
+
+      return {
+        id: page.id,
+        title,
+        description,
+        buttonText,
+        buttonUrl,
+        backgroundColor,
+      } as CTA;
+    } catch (error) {
+      console.error(`Failed to fetch CTA page ${pageId}:`, error);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(ctaPromises);
+  return results.filter((cta): cta is CTA => cta !== null);
+}
+
+/**
  * NotionのPageオブジェクトをパース
  */
-function parseNotionPage(page: PageObjectResponse): NotionPost | null {
+async function parseNotionPage(page: PageObjectResponse): Promise<NotionPost | null> {
   try {
     const properties = page.properties;
 
@@ -202,6 +263,20 @@ function parseNotionPage(page: PageObjectResponse): NotionPost | null {
       }
     }
 
+    // Pro版: IsAdSense (Checkbox)
+    const isAdSenseProp = properties.IsAdSense;
+    const isAdSense = isAdSenseProp?.type === 'checkbox'
+      ? isAdSenseProp.checkbox
+      : false;
+
+    // Pro版: RelatedCTA (Relation)
+    const relatedCTAProp = properties.RelatedCTA;
+    let relatedCTA: CTA[] = [];
+    if (relatedCTAProp?.type === 'relation' && relatedCTAProp.relation.length > 0) {
+      const ctaPageIds = relatedCTAProp.relation.map((rel) => rel.id);
+      relatedCTA = await fetchCTAData(ctaPageIds);
+    }
+
     const post = {
       id: page.id,
       title,
@@ -212,6 +287,8 @@ function parseNotionPage(page: PageObjectResponse): NotionPost | null {
       excerpt,
       coverImage,
       author,
+      isAdSense,
+      relatedCTA,
     };
 
     return NotionPostSchema.parse(post);

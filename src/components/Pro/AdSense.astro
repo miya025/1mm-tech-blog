@@ -1,0 +1,75 @@
+---
+/**
+ * AdSense.astro
+ * Pro版: 記事内広告プレースホルダー
+ *
+ * 環境変数 PUBLIC_ADSENSE_CLIENT と PUBLIC_ADSENSE_SLOT が設定されている場合は
+ * 本番のAdSenseコードを出力。未設定の場合はプレースホルダーを表示。
+ */
+
+interface Props {
+  /** 広告の表示位置 */
+  position?: 'in-article' | 'sidebar';
+  /** カスタムクラス */
+  class?: string;
+}
+
+const { position = 'in-article', class: className = '' } = Astro.props;
+
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT;
+const adsenseSlot = import.meta.env.PUBLIC_ADSENSE_SLOT;
+const hasAdSenseConfig = adsenseClient && adsenseSlot;
+---
+
+{hasAdSenseConfig ? (
+  <!-- 本番AdSenseコード -->
+  <div class:list={['adsense-container my-8', className]} data-position={position}>
+    <ins
+      class="adsbygoogle"
+      style="display:block; text-align:center;"
+      data-ad-layout="in-article"
+      data-ad-format="fluid"
+      data-ad-client={adsenseClient}
+      data-ad-slot={adsenseSlot}
+    ></ins>
+    <script is:inline>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+) : (
+  <!-- プレースホルダー（開発・デモ用） -->
+  <div
+    class:list={[
+      'adsense-placeholder my-8 p-6 bg-gray-100 border-2 border-dashed border-gray-300 rounded-xl text-center',
+      className
+    ]}
+    data-position={position}
+  >
+    <div class="flex flex-col items-center gap-2 text-gray-500">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+      <span class="text-sm font-medium">広告エリア</span>
+      <span class="text-xs">AdSense / Sponsored</span>
+    </div>
+  </div>
+)}
+
+<style>
+  .adsense-container,
+  .adsense-placeholder {
+    min-height: 100px;
+  }
+
+  /* 記事内広告用のスタイル */
+  [data-position="in-article"] {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+
+  /* サイドバー広告用のスタイル */
+  [data-position="sidebar"] {
+    width: 100%;
+  }
+</style>
