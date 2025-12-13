@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-const IMAGES_DIR = 'public/images/notion';
+const PUBLIC_IMAGES_DIR = 'public/images/notion';
+const DIST_IMAGES_DIR = 'dist/images/notion';
 
 /**
  * URLからハッシュベースのファイル名を生成
@@ -46,17 +47,12 @@ export async function downloadImage(url: string): Promise<string> {
 
   const filename = getHashedFilename(url);
   const localPath = `/images/notion/${filename}`;
-  const fullPath = path.join(process.cwd(), IMAGES_DIR, filename);
+  const publicPath = path.join(process.cwd(), PUBLIC_IMAGES_DIR, filename);
+  const distPath = path.join(process.cwd(), DIST_IMAGES_DIR, filename);
 
-  // 既にダウンロード済みならスキップ
-  if (fs.existsSync(fullPath)) {
+  // 既にダウンロード済みならスキップ（distを優先チェック）
+  if (fs.existsSync(distPath)) {
     return localPath;
-  }
-
-  // ディレクトリ作成
-  const dir = path.dirname(fullPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
   }
 
   try {
@@ -67,7 +63,16 @@ export async function downloadImage(url: string): Promise<string> {
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(fullPath, buffer);
+
+    // publicとdist両方に保存（Astroのビルドタイミング問題を回避）
+    for (const targetPath of [publicPath, distPath]) {
+      const dir = path.dirname(targetPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      fs.writeFileSync(targetPath, buffer);
+    }
+
     console.log(`Downloaded: ${filename}`);
     return localPath;
   } catch (error) {
@@ -95,8 +100,9 @@ export function imageExists(url: string): boolean {
     return fs.existsSync(path.join(process.cwd(), 'public', url));
   }
   const filename = getHashedFilename(url);
-  const fullPath = path.join(process.cwd(), IMAGES_DIR, filename);
-  return fs.existsSync(fullPath);
+  const distPath = path.join(process.cwd(), DIST_IMAGES_DIR, filename);
+  const publicPath = path.join(process.cwd(), PUBLIC_IMAGES_DIR, filename);
+  return fs.existsSync(distPath) || fs.existsSync(publicPath);
 }
 
 /**
