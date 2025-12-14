@@ -1,8 +1,20 @@
 import { Client } from '@notionhq/client';
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints';
 import { NotionPostSchema, type NotionPost, type NotionBlock, type CTA } from './types';
-import { downloadImage } from '../image-downloader';
 import { SITE_CONFIG } from '@/site-config';
+
+// 動的インポート用の型定義
+// image-downloaderはNode.js専用（fs, crypto使用）のため、SSR時はインポートしない
+type DownloadImageFn = (url: string) => Promise<string>;
+let downloadImage: DownloadImageFn | null = null;
+
+async function getDownloadImage(): Promise<DownloadImageFn> {
+  if (!downloadImage) {
+    const module = await import('../image-downloader');
+    downloadImage = module.downloadImage;
+  }
+  return downloadImage;
+}
 
 /**
  * 環境変数の型定義
@@ -174,14 +186,15 @@ export async function getPageBlocks(pageId: string, env?: NotionEnv): Promise<No
  * ブロック内の画像をダウンロードしてローカルパスに置換
  */
 async function processBlockImages(blocks: NotionBlock[]): Promise<void> {
+  const download = await getDownloadImage();
   for (const block of blocks) {
     if (block.type === 'image') {
       const content = block.image;
       if (content.type === 'external' && content.external?.url) {
-        const localPath = await downloadImage(content.external.url);
+        const localPath = await download(content.external.url);
         content.external.url = localPath;
       } else if (content.type === 'file' && content.file?.url) {
-        const localPath = await downloadImage(content.file.url);
+        const localPath = await download(content.file.url);
         content.file.url = localPath;
       }
     }
@@ -315,7 +328,8 @@ async function parseNotionPage(page: PageObjectResponse, env?: NotionEnv): Promi
         const isSSR = !!env;
         const shouldDownload = import.meta.env.PROD && !SITE_CONFIG.useCloudflareImageResizing && !isSSR;
         if (shouldDownload) {
-          coverImage = await downloadImage(originalUrl);
+          const download = await getDownloadImage();
+          coverImage = await download(originalUrl);
         } else {
           coverImage = originalUrl;
         }
