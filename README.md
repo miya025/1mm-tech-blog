@@ -126,6 +126,7 @@ npm run build
 5. 環境変数を設定:
    - `NOTION_TOKEN`
    - `NOTION_DATABASE_ID`
+   - `PREVIEW_SECRET`
 6. 「Save and Deploy」
 
 ## 📝 記事の書き方

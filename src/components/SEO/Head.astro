@@ -27,9 +27,9 @@ const {
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const fullTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFIG.title}`;
 
-// 動的OGP画像: 記事ページ（slugあり）は動的生成、それ以外は静的画像を使用
+// OGP画像: 記事ページ（slugあり）はビルド時生成、それ以外は静的画像を使用
 const ogImageURL = slug
-  ? new URL(`/api/og/${slug}.png`, Astro.site)
+  ? new URL(`/og/${slug}.png`, Astro.site)
   : image
     ? new URL(image, Astro.site)
     : new URL(SITE_CONFIG.ogImage, Astro.site);
