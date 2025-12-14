@@ -4,9 +4,21 @@ import PostImage from '@/components/PostImage.astro';
 
 interface Props {
   blocks: NotionBlock[];
+  /** プレビューモード用トークン（設定時は画像をプロキシ経由で取得） */
+  previewToken?: string;
 }
 
-const { blocks } = Astro.props;
+const { blocks, previewToken } = Astro.props;
+
+/**
+ * Notion画像URLをプロキシ経由URLに変換（プレビューモード時のみ）
+ */
+function toProxyUrl(imageUrl: string): string {
+  if (!previewToken) return imageUrl;
+  // ローカルパスはそのまま
+  if (imageUrl.startsWith('/')) return imageUrl;
+  return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&token=${encodeURIComponent(previewToken)}`;
+}
 
 function renderRichText(richText: any[]): string {
   if (!richText || richText.length === 0) return '';
@@ -88,7 +100,7 @@ function renderRichText(richText: any[]): string {
         return (
           <figure class="my-8 -mx-4 sm:mx-0">
             <PostImage
-              src={imageUrl}
+              src={toProxyUrl(imageUrl)}
               alt={caption || 'Image'}
               class="w-full rounded-xl shadow-lg"
               width={1200}

@@ -156,7 +156,9 @@ export async function getPageBlocks(pageId: string, env?: NotionEnv): Promise<No
     const blocks = response.results as NotionBlock[];
 
     // ビルド時に画像をダウンロード（Cloudflare Image Resizing無効時のみ）
-    const shouldDownload = import.meta.env.PROD && !SITE_CONFIG.useCloudflareImageResizing;
+    // SSR（env が渡される場合）ではダウンロードをスキップ（Cloudflare Workersではfsが使えない）
+    const isSSR = !!env;
+    const shouldDownload = import.meta.env.PROD && !SITE_CONFIG.useCloudflareImageResizing && !isSSR;
     if (shouldDownload) {
       await processBlockImages(blocks);
     }
@@ -308,8 +310,10 @@ async function parseNotionPage(page: PageObjectResponse, env?: NotionEnv): Promi
       }
 
       // ビルド時に画像をダウンロード（Cloudflare Image Resizing無効時のみ）
+      // SSR（env が渡される場合）ではダウンロードをスキップ
       if (originalUrl) {
-        const shouldDownload = import.meta.env.PROD && !SITE_CONFIG.useCloudflareImageResizing;
+        const isSSR = !!env;
+        const shouldDownload = import.meta.env.PROD && !SITE_CONFIG.useCloudflareImageResizing && !isSSR;
         if (shouldDownload) {
           coverImage = await downloadImage(originalUrl);
         } else {

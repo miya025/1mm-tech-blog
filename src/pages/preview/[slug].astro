@@ -6,6 +6,18 @@ import { getPostBySlugForPreview, getPageBlocks, type NotionEnv } from '@/lib/no
 // SSR: 毎リクエスト時に実行 (プレビュー用なのでキャッシュしない)
 export const prerender = false;
 
+/**
+ * Notion画像URLをプロキシ経由URLに変換
+ * NotionのS3 URLは約1時間で期限切れになるため、プロキシでキャッシュする
+ */
+function toProxyUrl(imageUrl: string | null, token: string): string | null {
+  if (!imageUrl) return null;
+  // ローカルパス（/images/...）やすでにプロキシ済みの場合はそのまま
+  if (imageUrl.startsWith('/')) return imageUrl;
+  // Notion S3 URLをプロキシ経由に変換
+  return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&token=${encodeURIComponent(token)}`;
+}
+
 // エラーレスポンスを返すヘルパー
 function errorResponse(title: string, message: string, details?: string, status = 500) {
   return new Response(
@@ -36,10 +48,12 @@ function errorResponse(title: string, message: string, details?: string, status 
 
 let post;
 let blocks;
+let previewToken: string;
 
 try {
   const { slug } = Astro.params;
   const token = Astro.url.searchParams.get('token');
+  previewToken = token || '';
 
   // Cloudflare Pages では runtime.env から環境変数を取得
   const runtime = (Astro.locals as { runtime?: { env?: Record<string, string> } }).runtime;
@@ -129,7 +143,7 @@ if (!post || !blocks) {
       {post.coverImage && (
         <div class="aspect-[2/1] sm:aspect-video overflow-hidden rounded-2xl mb-8 shadow-lg">
           <img
-            src={post.coverImage}
+            src={toProxyUrl(post.coverImage, previewToken) || post.coverImage}
             alt={post.title}
             class="w-full h-full object-cover"
             loading="eager"
@@ -186,7 +200,7 @@ if (!post || !blocks) {
     <!-- Content -->
     <div class="max-w-3xl mx-auto">
       <div class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md">
-        <NotionBlocks blocks={blocks} />
+        <NotionBlocks blocks={blocks} previewToken={previewToken} />
       </div>
     </div>
 
