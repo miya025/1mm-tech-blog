@@ -56,7 +56,7 @@ const websiteSchema = {
 
 // OGP画像URL
 const ogImageURL = slug
-  ? `${siteUrl}/api/og/${slug}.png`
+  ? `${siteUrl}/og/${slug}.png`
   : image
     ? (image.startsWith('http') ? image : `${siteUrl}${image}`)
     : `${siteUrl}${SITE_CONFIG.ogImage}`;
