@@ -48,18 +48,25 @@ async function loadFont(): Promise<ArrayBuffer> {
   }
 }
 
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, locals }) => {
   const { slug } = params;
 
   if (!slug) {
     return new Response('Slug is required', { status: 400 });
   }
 
+  // Cloudflare Pages では runtime.env から環境変数を取得
+  const runtime = (locals as { runtime?: { env?: Record<string, string> } }).runtime;
+  const env = {
+    NOTION_TOKEN: runtime?.env?.NOTION_TOKEN ?? import.meta.env.NOTION_TOKEN,
+    NOTION_DATABASE_ID: runtime?.env?.NOTION_DATABASE_ID ?? import.meta.env.NOTION_DATABASE_ID,
+  };
+
   try {
     // 記事を取得（Published優先、なければPreview用でも取得）
-    let post = await getPostBySlug(slug);
+    let post = await getPostBySlug(slug, env);
     if (!post) {
-      post = await getPostBySlugForPreview(slug);
+      post = await getPostBySlugForPreview(slug, env);
     }
 
     if (!post) {
