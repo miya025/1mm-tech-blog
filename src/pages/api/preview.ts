@@ -9,12 +9,14 @@ import type { APIRoute } from 'astro';
  * Usage: /api/preview?slug=xxx&secret=yyy
  */
 
-export const GET: APIRoute = async ({ url, redirect }) => {
+export const GET: APIRoute = async ({ url, redirect, locals }) => {
   const slug = url.searchParams.get('slug');
   const secret = url.searchParams.get('secret');
 
   // 環境変数からシークレットを取得
-  const PREVIEW_SECRET = import.meta.env.PREVIEW_SECRET;
+  // Cloudflare Pages では runtime.env から取得、ローカルでは import.meta.env を使用
+  const runtime = (locals as { runtime?: { env?: Record<string, string> } }).runtime;
+  const PREVIEW_SECRET = runtime?.env?.PREVIEW_SECRET ?? import.meta.env.PREVIEW_SECRET;
 
   // シークレットが未設定の場合
   if (!PREVIEW_SECRET) {

@@ -4,23 +4,47 @@ import { NotionPostSchema, type NotionPost, type NotionBlock, type CTA } from '.
 import { downloadImage } from '../image-downloader';
 import { SITE_CONFIG } from '@/site-config';
 
-const notion = new Client({
-  auth: import.meta.env.NOTION_TOKEN,
-});
+/**
+ * 環境変数の型定義
+ */
+export type NotionEnv = {
+  NOTION_TOKEN?: string;
+  NOTION_DATABASE_ID?: string;
+};
 
-const DATABASE_ID = import.meta.env.NOTION_DATABASE_ID;
+/**
+ * Notion クライアントを取得
+ * Cloudflare Pages SSR では runtime.env から、ビルド時は import.meta.env から取得
+ */
+function getNotionClient(env?: NotionEnv): Client {
+  const token = env?.NOTION_TOKEN ?? import.meta.env.NOTION_TOKEN;
+  if (!token) {
+    throw new Error('NOTION_TOKENが設定されていません。環境変数を確認してください。');
+  }
+  return new Client({ auth: token });
+}
+
+/**
+ * Database ID を取得
+ */
+function getDatabaseId(env?: NotionEnv): string {
+  const databaseId = env?.NOTION_DATABASE_ID ?? import.meta.env.NOTION_DATABASE_ID;
+  if (!databaseId) {
+    throw new Error('NOTION_DATABASE_IDが設定されていません。環境変数を確認してください。');
+  }
+  return databaseId;
+}
 
 /**
  * Notionデータベースから全記事を取得
  */
-export async function getPosts(): Promise<NotionPost[]> {
-  if (!DATABASE_ID) {
-    throw new Error('NOTION_DATABASE_IDが設定されていません。.envファイルを確認してください。');
-  }
+export async function getPosts(env?: NotionEnv): Promise<NotionPost[]> {
+  const notion = getNotionClient(env);
+  const databaseId = getDatabaseId(env);
 
   try {
     const response = await notion.databases.query({
-      database_id: DATABASE_ID,
+      database_id: databaseId,
       filter: {
         property: 'Status',
         select: {
@@ -36,7 +60,7 @@ export async function getPosts(): Promise<NotionPost[]> {
     });
 
     const postPromises = response.results.map((page) => {
-      return parseNotionPage(page as PageObjectResponse);
+      return parseNotionPage(page as PageObjectResponse, env);
     });
 
     const posts = await Promise.all(postPromises);
@@ -50,14 +74,13 @@ export async function getPosts(): Promise<NotionPost[]> {
 /**
  * スラッグから特定の記事を取得 (Publishedのみ)
  */
-export async function getPostBySlug(slug: string): Promise<NotionPost | null> {
-  if (!DATABASE_ID) {
-    throw new Error('NOTION_DATABASE_IDが設定されていません');
-  }
+export async function getPostBySlug(slug: string, env?: NotionEnv): Promise<NotionPost | null> {
+  const notion = getNotionClient(env);
+  const databaseId = getDatabaseId(env);
 
   try {
     const response = await notion.databases.query({
-      database_id: DATABASE_ID,
+      database_id: databaseId,
       filter: {
         and: [
           {
@@ -80,7 +103,7 @@ export async function getPostBySlug(slug: string): Promise<NotionPost | null> {
       return null;
     }
 
-    return await parseNotionPage(response.results[0] as PageObjectResponse);
+    return await parseNotionPage(response.results[0] as PageObjectResponse, env);
   } catch (error) {
     console.error(`Failed to fetch post with slug "${slug}":`, error);
     return null;
@@ -91,14 +114,13 @@ export async function getPostBySlug(slug: string): Promise<NotionPost | null> {
  * プレビュー用: スラッグから記事を取得 (Draft/Published問わず)
  * Pro版専用機能
  */
-export async function getPostBySlugForPreview(slug: string): Promise<NotionPost | null> {
-  if (!DATABASE_ID) {
-    throw new Error('NOTION_DATABASE_IDが設定されていません');
-  }
+export async function getPostBySlugForPreview(slug: string, env?: NotionEnv): Promise<NotionPost | null> {
+  const notion = getNotionClient(env);
+  const databaseId = getDatabaseId(env);
 
   try {
     const response = await notion.databases.query({
-      database_id: DATABASE_ID,
+      database_id: databaseId,
       filter: {
         property: 'Slug',
         rich_text: {
@@ -111,7 +133,7 @@ export async function getPostBySlugForPreview(slug: string): Promise<NotionPost 
       return null;
     }
 
-    return await parseNotionPage(response.results[0] as PageObjectResponse);
+    return await parseNotionPage(response.results[0] as PageObjectResponse, env);
   } catch (error) {
     console.error(`Failed to fetch preview post with slug "${slug}":`, error);
     return null;
@@ -122,7 +144,9 @@ export async function getPostBySlugForPreview(slug: string): Promise<NotionPost 
  * ページIDからブロック（記事本文）を取得
  * 画像ブロックはビルド時にダウンロード処理を行う
  */
-export async function getPageBlocks(pageId: string): Promise<NotionBlock[]> {
+export async function getPageBlocks(pageId: string, env?: NotionEnv): Promise<NotionBlock[]> {
+  const notion = getNotionClient(env);
+
   try {
     const response = await notion.blocks.children.list({
       block_id: pageId,
@@ -166,8 +190,9 @@ async function processBlockImages(blocks: NotionBlock[]): Promise<void> {
  * CTA管理DBからCTAデータを取得
  * Pro版専用機能
  */
-async function fetchCTAData(pageIds: string[]): Promise<CTA[]> {
+async function fetchCTAData(pageIds: string[], env?: NotionEnv): Promise<CTA[]> {
   if (pageIds.length === 0) return [];
+  const notion = getNotionClient(env);
 
   const ctaPromises = pageIds.map(async (pageId) => {
     try {
@@ -225,7 +250,7 @@ async function fetchCTAData(pageIds: string[]): Promise<CTA[]> {
 /**
  * NotionのPageオブジェクトをパース
  */
-async function parseNotionPage(page: PageObjectResponse): Promise<NotionPost | null> {
+async function parseNotionPage(page: PageObjectResponse, env?: NotionEnv): Promise<NotionPost | null> {
   try {
     const properties = page.properties;
 
@@ -314,7 +339,7 @@ async function parseNotionPage(page: PageObjectResponse): Promise<NotionPost | n
     let relatedCTA: CTA[] = [];
     if (relatedCTAProp?.type === 'relation' && relatedCTAProp.relation.length > 0) {
       const ctaPageIds = relatedCTAProp.relation.map((rel) => rel.id);
-      relatedCTA = await fetchCTAData(ctaPageIds);
+      relatedCTA = await fetchCTAData(ctaPageIds, env);
     }
 
     const post = {

@@ -1,65 +1,106 @@
 ---
 import Layout from '@/layouts/Layout.astro';
 import NotionBlocks from '@/components/Notion/NotionBlocks.astro';
-import { getPostBySlugForPreview, getPageBlocks } from '@/lib/notion/client';
+import { getPostBySlugForPreview, getPageBlocks, type NotionEnv } from '@/lib/notion/client';
 
 // SSR: 毎リクエスト時に実行 (プレビュー用なのでキャッシュしない)
 export const prerender = false;
 
-const { slug } = Astro.params;
-const token = Astro.url.searchParams.get('token');
-
-// 環境変数からシークレットを取得
-const PREVIEW_SECRET = import.meta.env.PREVIEW_SECRET;
-
-// 認証チェック
-if (!PREVIEW_SECRET || token !== PREVIEW_SECRET) {
-  return Astro.redirect('/api/preview?error=unauthorized');
-}
-
-// slugが存在しない場合
-if (!slug) {
-  return Astro.redirect('/');
-}
-
-// Notionから記事を取得 (Draft/Published問わず)
-const post = await getPostBySlugForPreview(slug);
-
-if (!post) {
+// エラーレスポンスを返すヘルパー
+function errorResponse(title: string, message: string, details?: string, status = 500) {
   return new Response(
     `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>記事が見つかりません</title>
+  <title>${title}</title>
   <style>
     body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
-    .error { text-align: center; padding: 2rem; background: white; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .error { text-align: center; padding: 2rem; background: white; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 600px; }
     h1 { color: #ef4444; margin-bottom: 1rem; }
     p { color: #666; }
-    code { background: #f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+    pre { background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; text-align: left; overflow-x: auto; font-size: 12px; }
   </style>
 </head>
 <body>
   <div class="error">
-    <h1>記事が見つかりません</h1>
-    <p>スラッグ <code>${slug}</code> に該当する記事がNotionに存在しません。</p>
-    <p>Slugプロパティを確認してください。</p>
+    <h1>${title}</h1>
+    <p>${message}</p>
+    ${details ? `<pre>${details}</pre>` : ''}
   </div>
 </body>
 </html>`,
-    {
-      status: 404,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
-    }
+    { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
   );
 }
 
-// ブロック（本文）を取得
-const blocks = await getPageBlocks(post.id);
+let post;
+let blocks;
 
-// プレビューモードであることを示すフラグ
-const isPreview = true;
+try {
+  const { slug } = Astro.params;
+  const token = Astro.url.searchParams.get('token');
+
+  // Cloudflare Pages では runtime.env から環境変数を取得
+  const runtime = (Astro.locals as { runtime?: { env?: Record<string, string> } }).runtime;
+  const PREVIEW_SECRET = runtime?.env?.PREVIEW_SECRET ?? import.meta.env.PREVIEW_SECRET;
+
+  // Notion API用の環境変数
+  const notionEnv: NotionEnv | undefined = runtime?.env ? {
+    NOTION_TOKEN: runtime.env.NOTION_TOKEN,
+    NOTION_DATABASE_ID: runtime.env.NOTION_DATABASE_ID,
+  } : undefined;
+
+  // デバッグ: 環境変数の存在確認
+  const hasToken = !!(notionEnv?.NOTION_TOKEN || import.meta.env.NOTION_TOKEN);
+  const hasDbId = !!(notionEnv?.NOTION_DATABASE_ID || import.meta.env.NOTION_DATABASE_ID);
+
+  if (!hasToken || !hasDbId) {
+    return errorResponse(
+      '環境変数エラー',
+      'Notion APIの環境変数が設定されていません',
+      `NOTION_TOKEN: ${hasToken ? '✓' : '✗'}\nNOTION_DATABASE_ID: ${hasDbId ? '✓' : '✗'}\nruntime.env exists: ${!!runtime?.env}`
+    );
+  }
+
+  // 認証チェック
+  if (!PREVIEW_SECRET || token !== PREVIEW_SECRET) {
+    return Astro.redirect('/api/preview?error=unauthorized');
+  }
+
+  // slugが存在しない場合
+  if (!slug) {
+    return Astro.redirect('/');
+  }
+
+  // Notionから記事を取得 (Draft/Published問わず)
+  post = await getPostBySlugForPreview(slug, notionEnv);
+
+  if (!post) {
+    return errorResponse(
+      '記事が見つかりません',
+      `スラッグ "${slug}" に該当する記事がNotionに存在しません。`,
+      'Slugプロパティを確認してください。',
+      404
+    );
+  }
+
+  // ブロック（本文）を取得
+  blocks = await getPageBlocks(post.id, notionEnv);
+
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const stack = error instanceof Error ? error.stack : undefined;
+  return errorResponse(
+    'プレビューエラー',
+    'プレビューの生成中にエラーが発生しました',
+    `Error: ${message}\n\n${stack || ''}`
+  );
+}
+
+if (!post || !blocks) {
+  return errorResponse('予期しないエラー', 'データの取得に失敗しました');
+}
 ---
 
 <Layout
