@@ -1,14 +1,39 @@
 import type { APIRoute } from 'astro';
 import satori from 'satori';
-import { Resvg } from '@cf-wasm/resvg';
+import { Resvg, initWasm } from '@resvg/resvg-wasm';
 import { getPostBySlug, getPostBySlugForPreview } from '@/lib/notion/client';
 import { SITE_CONFIG } from '@/site-config';
 
 // SSR mode for dynamic OGP generation
 export const prerender = false;
 
+// WASM初期化フラグ
+let wasmInitialized = false;
+
 // フォントキャッシュ（同一Worker内で再利用）
 let fontCache: ArrayBuffer | null = null;
+
+// WASM を初期化
+async function ensureWasmInitialized(): Promise<void> {
+  if (wasmInitialized) return;
+
+  try {
+    // @resvg/resvg-wasm の WASM ファイルを fetch して初期化
+    const wasmResponse = await fetch(
+      'https://unpkg.com/@resvg/resvg-wasm@2.6.2/index_bg.wasm'
+    );
+    const wasmBuffer = await wasmResponse.arrayBuffer();
+    await initWasm(wasmBuffer);
+    wasmInitialized = true;
+  } catch (error) {
+    // すでに初期化済みの場合はエラーを無視
+    if (error instanceof Error && error.message.includes('Already initialized')) {
+      wasmInitialized = true;
+      return;
+    }
+    throw error;
+  }
+}
 
 // Google Fonts から日本語フォントを取得（キャッシュ付き）
 async function loadFont(): Promise<ArrayBuffer> {
@@ -63,6 +88,9 @@ export const GET: APIRoute = async ({ params, locals }) => {
   };
 
   try {
+    // WASM を初期化
+    await ensureWasmInitialized();
+
     // 記事を取得（Published優先、なければPreview用でも取得）
     let post = await getPostBySlug(slug, env);
     if (!post) {
@@ -149,7 +177,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
       }
     );
 
-    // ResvgでPNGに変換（@cf-wasm/resvgはCloudflare Workers対応）
+    // ResvgでPNGに変換
     const resvg = new Resvg(svg, {
       fitTo: {
         mode: 'width',
