@@ -1,5 +1,5 @@
 export const SITE_CONFIG = {
-  title: 'My Notion Blog',
+  title: '1mm Tech Blog',
   description: 'A fast, secure blog powered by Notion and Astro',
   author: 'Your Name',
   url: 'https://example.com', // astro.config.mjsと合わせる
