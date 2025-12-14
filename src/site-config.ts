@@ -2,7 +2,6 @@ export const SITE_CONFIG = {
   title: '1mm Tech Blog',
   description: 'A fast, secure blog powered by Notion and Astro',
   author: 'Your Name',
-  url: 'https://miyadev.com', // astro.config.mjsと合わせる
   lang: 'ja',
   ogImage: '/og-image.png',
 
