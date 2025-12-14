@@ -81,14 +81,25 @@ NOTION_DATABASE_ID=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 ### 5. サイト設定
 
-`src/site-config.ts`を開いて、サイト情報をカスタマイズ:
+**重要: 以下の2ファイルでサイトURLを設定してください。OGP画像やSEOが正しく機能するために必須です。**
+
+#### `astro.config.mjs`
+
+```javascript
+export default defineConfig({
+  site: 'https://yourdomain.com', // ← あなたのドメインに変更
+  // ...
+});
+```
+
+#### `src/site-config.ts`
 
 ```typescript
 export const SITE_CONFIG = {
   title: 'My Notion Blog',
   description: 'A fast, secure blog powered by Notion and Astro',
   author: 'Your Name',
-  url: 'https://example.com',
+  url: 'https://yourdomain.com', // ← astro.config.mjsと同じURLに変更
 
   // 画像最適化設定
   // false (デフォルト): ビルド時にNotionから画像をダウンロード
