@@ -7,6 +7,7 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   site: 'https://miyadev.com', // ユーザーが変更する
   output: 'server', // Pro版: SSR + API Routes (Edge Functions)
+  trailingSlash: 'never', // URLの末尾スラッシュを削除
   adapter: cloudflare({
     imageService: 'cloudflare', // Cloudflare Image Resizing を利用
   }),
