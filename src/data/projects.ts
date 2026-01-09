@@ -8,6 +8,11 @@ export interface Project {
     colorTheme: 'blue' | 'green' | 'gray';
 }
 
+// Safelist for dynamic classes:
+// bg-blue-100 text-blue-700 hover:border-blue-200
+// bg-green-100 text-green-700 hover:border-green-200
+// bg-gray-100 text-gray-700 hover:border-gray-200
+
 export const projects: Project[] = [
     {
         title: "コード差分翻訳ツール",
