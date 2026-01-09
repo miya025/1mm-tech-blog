@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { getPosts } from "@/lib/notion/client";
+import { projects } from "@/data/projects";
 
 // SSGとしてビルド時に静的生成 (Astro v5)
 export const prerender = true;
@@ -149,59 +150,57 @@ const posts = await getPosts();
   <!-- ===== 3. 実績紹介 ===== -->
   <section class="py-20 sm:py-24 bg-gray-50">
     <div class="max-w-4xl mx-auto px-4">
-      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-4">
-        実績紹介
-      </h2>
-      <p class="text-gray-600 text-center mb-12 max-w-xl mx-auto">
-        技術スタックを基盤とした実装例
-      </p>
+      <div class="text-center mb-12">
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+          実績紹介
+        </h2>
+        <p class="text-gray-600 max-w-xl mx-auto">
+          技術スタックを基盤とした実装例
+        </p>
+      </div>
 
-      <div class="grid gap-8 md:grid-cols-2">
-        <!-- コード差分翻訳ツール -->
-        <a
-          href="https://diff-note.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="block bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow border border-gray-100 hover:border-blue-200"
-        >
-          <span
-            class="inline-block px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full mb-4"
-          >
-            Auth / API連携
-          </span>
-          <h3 class="text-xl font-bold text-gray-900 mb-3">
-            コード差分翻訳ツール
-          </h3>
-          <p class="text-sm text-gray-500 mb-4">
-            ユーザー認証と外部APIを統合した実用ツール
-          </p>
-          <p class="text-gray-600 leading-relaxed">
-            Next.jsとTypeScriptをベースに、Supabaseによるユーザー認証機能を備えた開発補助ツールです。OpenAI
-            APIを統合し、コードの変更箇所（Diff）のみを抽出して自動翻訳するロジックを実装。データの永続化から高度なテキスト処理までを一貫して構築しています。
-          </p>
-        </a>
+      <div class="grid gap-8 md:grid-cols-2 mb-10">
+        {
+          projects.slice(0, 2).map((project) => (
+            <a
+              href={project.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class={`block bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow border border-gray-100 hover:border-${project.colorTheme}-200`}
+            >
+              <span
+                class={`inline-block px-3 py-1 bg-${project.colorTheme}-50 text-${project.colorTheme}-700 text-xs font-medium rounded-full mb-4`}
+              >
+                {project.tags[0]} / {project.tags[1]}
+              </span>
+              <h3 class="text-xl font-bold text-gray-900 mb-3">
+                {project.title}
+              </h3>
+              <p class="text-sm text-gray-500 mb-4">{project.subtitle}</p>
+              <p class="text-gray-600 leading-relaxed">{project.description}</p>
+            </a>
+          ))
+        }
+      </div>
 
-        <!-- GEO診断ツール -->
+      <div class="text-center">
         <a
-          href="https://ai-user-diagnosis.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="block bg-white rounded-2xl p-8 shadow-sm hover:shadow-lg transition-shadow border border-gray-100 hover:border-green-200"
+          href="/portfolio"
+          class="inline-flex items-center gap-2 text-gray-900 font-semibold hover:text-blue-600 transition-colors"
         >
-          <span
-            class="inline-block px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full mb-4"
+          すべての実績を見る
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            AI / プロトタイプ
-          </span>
-          <h3 class="text-xl font-bold text-gray-900 mb-3">
-            生成AI時代のSEO（GEO）診断ツール
-          </h3>
-          <p class="text-sm text-gray-500 mb-4">
-            最新トレンド（AI検索最適化）に対応したプロトタイプ
-          </p>
-          <p class="text-gray-600 leading-relaxed">
-            AI検索（GEO）を分析するための診断システムです。Astroを用いた高速なフロントエンドに加え、位置情報データやAI応答の解析ロジックを統合。複雑な設定を排し、実利的な解析結果を即座に導き出すパフォーマンスに特化した実装の一例です。
-          </p>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
         </a>
       </div>
     </div>
