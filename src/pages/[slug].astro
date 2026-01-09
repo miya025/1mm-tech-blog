@@ -48,20 +48,6 @@ const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
   <article class="max-w-4xl mx-auto px-4 py-8 md:py-12 bg-white rounded-2xl shadow-sm my-8">
     <!-- Header -->
     <header class="mb-10">
-      {post.coverImage && (
-        <div class="aspect-[2/1] sm:aspect-video overflow-hidden rounded-2xl mb-8 shadow-lg">
-          <img
-            src={post.coverImage}
-            alt={post.title}
-            class="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-            width="1200"
-            height="675"
-          />
-        </div>
-      )}
-
       <div class="max-w-3xl mx-auto">
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
           {post.title}

@@ -77,7 +77,16 @@ cp .env.example .env
 ```env
 NOTION_TOKEN=secret_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 NOTION_DATABASE_ID=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+# Google Analytics 4 (任意)
+PUBLIC_GA_ID=G-XXXXXXXXXX
 ```
+
+#### Google Analytics 4 測定IDの取得方法:
+1. Google Analyticsで「管理」（歯車アイコン）をクリック
+2. 「データの収集と修正」→「データストリーム」を選択
+3. 対象のウェブストリームを選択
+4. 「測定ID」（`G-`から始まる文字列）をコピー
 
 ### 5. サイト設定
 

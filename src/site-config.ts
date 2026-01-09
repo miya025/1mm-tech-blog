@@ -1,5 +1,5 @@
 export const SITE_CONFIG = {
-  title: '1mm Tech Blog',
+  title: 'miyadev',
   description: 'A fast, secure blog powered by Notion and Astro',
   author: 'Your Name',
   lang: 'ja',
