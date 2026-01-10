@@ -180,9 +180,10 @@ function renderRichText(richText: any[]): string {
               <div class="bg-gray-800 px-4 py-2 flex items-center justify-between">
                 <span class="text-xs text-gray-400 font-mono">{language}</span>
               </div>
-              <pre class="bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm leading-relaxed">
-                <code class={`language-${language}`}>{code}</code>
-              </pre>
+              <pre
+                class="bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm leading-relaxed"
+                set:html={`<code class="language-${language}">${code}</code>`}
+              />
             </div>
           );
 
