@@ -45,15 +45,25 @@ const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
   author={post.author || undefined}
   tags={post.tags}
 >
-  <article class="max-w-4xl mx-auto px-4 py-8 md:py-12 bg-white rounded-2xl shadow-sm my-8">
+  <article class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm my-8 overflow-hidden">
     <!-- Header -->
-    <header class="mb-10">
-      <div class="max-w-3xl mx-auto">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
+    <header class="bg-gradient-to-b from-gray-50 to-white py-10 md:py-14 text-center border-b border-gray-100">
+      <div class="max-w-3xl mx-auto px-4">
+        {post.tags.length > 0 && (
+          <div class="flex flex-wrap justify-center gap-2 mb-6">
+            {post.tags.map((tag) => (
+              <span class="px-3 py-1.5 bg-white text-blue-700 text-xs font-medium rounded-full border border-gray-200">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 leading-tight text-gray-900">
           {post.title}
         </h1>
 
-        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-6">
+        <div class="flex flex-wrap justify-center items-center gap-4 text-sm text-gray-500">
           {post.publishedDate && (
             <time datetime={post.publishedDate} class="flex items-center gap-1.5">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +78,7 @@ const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
           )}
           {post.author && (
             <>
-              <span class="text-gray-400" aria-hidden="true">•</span>
+              <span class="text-gray-300" aria-hidden="true">|</span>
               <span class="flex items-center gap-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -78,55 +88,47 @@ const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
             </>
           )}
         </div>
-
-        {post.tags.length > 0 && (
-          <div class="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-100 transition-colors">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </header>
 
     <!-- Content -->
-    <div class="max-w-3xl mx-auto">
-      <div class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md">
-        {post.isAdSense && blocksAfterAd.length > 0 ? (
-          <>
-            <NotionBlocks blocks={blocksBeforeAd} />
-            <!-- Pro版: 記事内広告 -->
-            <AdSense position="in-article" />
-            <NotionBlocks blocks={blocksAfterAd} />
-          </>
-        ) : (
-          <NotionBlocks blocks={blocks} />
+    <div class="px-4 py-8 md:py-12">
+      <div class="max-w-3xl mx-auto">
+        <div class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md">
+          {post.isAdSense && blocksAfterAd.length > 0 ? (
+            <>
+              <NotionBlocks blocks={blocksBeforeAd} />
+              <!-- Pro版: 記事内広告 -->
+              <AdSense position="in-article" />
+              <NotionBlocks blocks={blocksAfterAd} />
+            </>
+          ) : (
+            <NotionBlocks blocks={blocks} />
+          )}
+        </div>
+
+        {/* Pro版: CTA表示 */}
+        {post.relatedCTA.length > 0 && (
+          <div class="mt-12">
+            {post.relatedCTA.map((cta) => (
+              <CTA cta={cta} />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Pro版: CTA表示 */}
-      {post.relatedCTA.length > 0 && (
-        <div class="mt-12">
-          {post.relatedCTA.map((cta) => (
-            <CTA cta={cta} />
-          ))}
-        </div>
-      )}
-    </div>
-
-    <!-- Back to Home -->
-    <div class="max-w-3xl mx-auto mt-16 pt-8 border-t border-gray-200">
-      <a
-        href="/"
-        class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors group"
-      >
-        <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Back to all posts
-      </a>
+      <!-- Back to Home -->
+      <div class="max-w-3xl mx-auto mt-16 pt-8 border-t border-gray-200">
+        <a
+          href="/"
+          class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors group"
+        >
+          <svg class="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to all posts
+        </a>
+      </div>
     </div>
   </article>
 </Layout>
