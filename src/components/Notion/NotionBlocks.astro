@@ -1,6 +1,6 @@
 ---
-import type { NotionBlock } from '@/lib/notion/types';
-import PostImage from '@/components/PostImage.astro';
+import type { NotionBlock } from "@/lib/notion/types";
+import PostImage from "@/components/PostImage.astro";
 
 interface Props {
   blocks: NotionBlock[];
@@ -14,7 +14,7 @@ const { blocks, previewToken } = Astro.props;
  * 連続するリストアイテムをグループ化
  */
 interface GroupedBlock {
-  type: 'single' | 'bulleted_list' | 'numbered_list';
+  type: "single" | "bulleted_list" | "numbered_list";
   blocks: NotionBlock[];
 }
 
@@ -23,26 +23,26 @@ function groupBlocks(blocks: NotionBlock[]): GroupedBlock[] {
   let currentList: GroupedBlock | null = null;
 
   for (const block of blocks) {
-    if (block.type === 'bulleted_list_item') {
-      if (currentList?.type === 'bulleted_list') {
+    if (block.type === "bulleted_list_item") {
+      if (currentList?.type === "bulleted_list") {
         currentList.blocks.push(block);
       } else {
         if (currentList) grouped.push(currentList);
-        currentList = { type: 'bulleted_list', blocks: [block] };
+        currentList = { type: "bulleted_list", blocks: [block] };
       }
-    } else if (block.type === 'numbered_list_item') {
-      if (currentList?.type === 'numbered_list') {
+    } else if (block.type === "numbered_list_item") {
+      if (currentList?.type === "numbered_list") {
         currentList.blocks.push(block);
       } else {
         if (currentList) grouped.push(currentList);
-        currentList = { type: 'numbered_list', blocks: [block] };
+        currentList = { type: "numbered_list", blocks: [block] };
       }
     } else {
       if (currentList) {
         grouped.push(currentList);
         currentList = null;
       }
-      grouped.push({ type: 'single', blocks: [block] });
+      grouped.push({ type: "single", blocks: [block] });
     }
   }
   if (currentList) grouped.push(currentList);
@@ -57,119 +57,169 @@ const groupedBlocks = groupBlocks(blocks);
 function toProxyUrl(imageUrl: string): string {
   if (!previewToken) return imageUrl;
   // ローカルパスはそのまま
-  if (imageUrl.startsWith('/')) return imageUrl;
+  if (imageUrl.startsWith("/")) return imageUrl;
   return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&token=${encodeURIComponent(previewToken)}`;
 }
 
+/**
+ * HTMLエスケープ処理
+ */
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function renderRichText(richText: any[]): string {
-  if (!richText || richText.length === 0) return '';
+  if (!richText || richText.length === 0) return "";
 
   return richText
     .map((text) => {
-      let content = text.plain_text;
+      // インラインコードの場合は必ずエスケープ
+      // それ以外のテキストもエスケープして安全にする
+      let content = escapeHtml(text.plain_text);
 
       if (text.annotations.bold) content = `<strong>${content}</strong>`;
       if (text.annotations.italic) content = `<em>${content}</em>`;
-      if (text.annotations.code) content = `<code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">${content}</code>`;
+      if (text.annotations.code)
+        content = `<code class="px-1.5 py-0.5 bg-gray-100 rounded text-sm font-mono">${content}</code>`;
       if (text.annotations.strikethrough) content = `<del>${content}</del>`;
-      if (text.href) content = `<a href="${text.href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">${content}</a>`;
+      if (text.href)
+        content = `<a href="${text.href}" class="text-blue-600 hover:underline" target="_blank" rel="noopener">${content}</a>`;
 
       return content;
     })
-    .join('');
+    .join("");
 }
 ---
 
 <div class="notion-content space-y-5">
-  {groupedBlocks.map((group) => {
-    if (group.type === 'bulleted_list') {
-      return (
-        <ul class="list-disc space-y-1">
-          {group.blocks.map((block) => (
-            <li class="ml-5 pl-2 text-gray-700 text-[17px] leading-[1.8] marker:text-blue-500" set:html={renderRichText(block.bulleted_list_item.rich_text)} />
-          ))}
-        </ul>
-      );
-    }
-
-    if (group.type === 'numbered_list') {
-      return (
-        <ol class="list-decimal space-y-1">
-          {group.blocks.map((block) => (
-            <li class="ml-5 pl-2 text-gray-700 text-[17px] leading-[1.8] marker:text-blue-600 marker:font-semibold" set:html={renderRichText(block.numbered_list_item.rich_text)} />
-          ))}
-        </ol>
-      );
-    }
-
-    const block = group.blocks[0];
-    const type = block.type;
-    const content = block[type];
-
-    switch (type) {
-      case 'paragraph':
-        const text = renderRichText(content.rich_text);
-        if (!text.trim()) return null;
+  {
+    groupedBlocks.map((group) => {
+      if (group.type === "bulleted_list") {
         return (
-          <p class="text-gray-700 text-[17px] leading-[1.8] tracking-normal" set:html={text} />
+          <ul class="list-disc space-y-1">
+            {group.blocks.map((block) => (
+              <li
+                class="ml-5 pl-2 text-gray-700 text-[17px] leading-[1.8] marker:text-blue-500"
+                set:html={renderRichText(block.bulleted_list_item.rich_text)}
+              />
+            ))}
+          </ul>
         );
+      }
 
-      case 'heading_1':
+      if (group.type === "numbered_list") {
         return (
-          <h2 class="text-3xl md:text-4xl font-bold mt-12 mb-5 text-gray-900 leading-tight" set:html={renderRichText(content.rich_text)} />
+          <ol class="list-decimal space-y-1">
+            {group.blocks.map((block) => (
+              <li
+                class="ml-5 pl-2 text-gray-700 text-[17px] leading-[1.8] marker:text-blue-600 marker:font-semibold"
+                set:html={renderRichText(block.numbered_list_item.rich_text)}
+              />
+            ))}
+          </ol>
         );
+      }
 
-      case 'heading_2':
-        return (
-          <h3 class="text-2xl md:text-3xl font-bold mt-10 mb-4 text-gray-900 leading-tight" set:html={renderRichText(content.rich_text)} />
-        );
+      const block = group.blocks[0];
+      const type = block.type;
+      const content = block[type];
 
-      case 'heading_3':
-        return (
-          <h4 class="text-xl md:text-2xl font-semibold mt-8 mb-3 text-gray-900 leading-snug" set:html={renderRichText(content.rich_text)} />
-        );
-
-      case 'quote':
-        return (
-          <blockquote class="border-l-4 border-blue-500 bg-blue-50/50 pl-6 pr-4 py-4 italic text-gray-700 my-6 rounded-r-lg" set:html={renderRichText(content.rich_text)} />
-        );
-
-      case 'code':
-        const language = content.language || 'text';
-        const code = content.rich_text.map((t: any) => t.plain_text).join('');
-        return (
-          <div class="my-6 rounded-xl overflow-hidden shadow-md border border-gray-200">
-            <div class="bg-gray-800 px-4 py-2 flex items-center justify-between">
-              <span class="text-xs text-gray-400 font-mono">{language}</span>
-            </div>
-            <pre class="bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm leading-relaxed"><code class={`language-${language}`}>{code}</code></pre>
-          </div>
-        );
-
-      case 'image':
-        const imageUrl = content.type === 'external' ? content.external.url : content.file.url;
-        const caption = content.caption.length > 0 ? renderRichText(content.caption) : '';
-        return (
-          <figure class="my-8 -mx-4 sm:mx-0">
-            <PostImage
-              src={toProxyUrl(imageUrl)}
-              alt={caption || 'Image'}
-              class="w-full rounded-xl shadow-lg"
-              width={1200}
-              height={675}
-              fit="scale-down"
-              quality={80}
-              format="auto"
+      switch (type) {
+        case "paragraph":
+          const text = renderRichText(content.rich_text);
+          if (!text.trim()) return null;
+          return (
+            <p
+              class="text-gray-700 text-[17px] leading-[1.8] tracking-normal"
+              set:html={text}
             />
-            {caption && <figcaption class="text-sm text-gray-500 mt-3 text-center px-4" set:html={caption} />}
-          </figure>
-        );
+          );
 
-      case 'divider':
-        return <hr class="my-12 border-gray-200 border-t-2" />;
+        case "heading_1":
+          return (
+            <h2
+              class="text-3xl md:text-4xl font-bold mt-12 mb-5 text-gray-900 leading-tight"
+              set:html={renderRichText(content.rich_text)}
+            />
+          );
 
-      default:
-        return null;
-    }
-  })}
+        case "heading_2":
+          return (
+            <h3
+              class="text-2xl md:text-3xl font-bold mt-10 mb-4 text-gray-900 leading-tight"
+              set:html={renderRichText(content.rich_text)}
+            />
+          );
+
+        case "heading_3":
+          return (
+            <h4
+              class="text-xl md:text-2xl font-semibold mt-8 mb-3 text-gray-900 leading-snug"
+              set:html={renderRichText(content.rich_text)}
+            />
+          );
+
+        case "quote":
+          return (
+            <blockquote
+              class="border-l-4 border-blue-500 bg-blue-50/50 pl-6 pr-4 py-4 italic text-gray-700 my-6 rounded-r-lg"
+              set:html={renderRichText(content.rich_text)}
+            />
+          );
+
+        case "code":
+          const language = content.language || "text";
+          const code = content.rich_text.map((t: any) => t.plain_text).join("");
+          return (
+            <div class="my-6 rounded-xl overflow-hidden shadow-md border border-gray-200">
+              <div class="bg-gray-800 px-4 py-2 flex items-center justify-between">
+                <span class="text-xs text-gray-400 font-mono">{language}</span>
+              </div>
+              <pre class="bg-gray-900 text-gray-100 p-4 overflow-x-auto text-sm leading-relaxed">
+                <code class={`language-${language}`}>{code}</code>
+              </pre>
+            </div>
+          );
+
+        case "image":
+          const imageUrl =
+            content.type === "external"
+              ? content.external.url
+              : content.file.url;
+          const caption =
+            content.caption.length > 0 ? renderRichText(content.caption) : "";
+          return (
+            <figure class="my-8 -mx-4 sm:mx-0">
+              <PostImage
+                src={toProxyUrl(imageUrl)}
+                alt={caption || "Image"}
+                class="w-full rounded-xl shadow-lg"
+                width={1200}
+                height={675}
+                fit="scale-down"
+                quality={80}
+                format="auto"
+              />
+              {caption && (
+                <figcaption
+                  class="text-sm text-gray-500 mt-3 text-center px-4"
+                  set:html={caption}
+                />
+              )}
+            </figure>
+          );
+
+        case "divider":
+          return <hr class="my-12 border-gray-200 border-t-2" />;
+
+        default:
+          return null;
+      }
+    })
+  }
 </div>
