@@ -1,7 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import { getPosts } from "@/lib/notion/client";
-import { projects } from "@/data/projects";
+// import { projects } from "@/data/projects";
 
 // SSGとしてビルド時に静的生成 (Astro v5)
 export const prerender = true;
@@ -10,6 +10,8 @@ const posts = await getPosts();
 ---
 
 <Layout>
+  {
+    /*
   <!-- ===== 1. ヒーローセクション ===== -->
   <section
     class="bg-gradient-to-b from-gray-50 to-white py-20 sm:py-28 md:py-36"
@@ -261,6 +263,8 @@ const posts = await getPosts();
       </a>
     </div>
   </section>
+  */
+  }
 
   <!-- ===== 6. 最新記事一覧 ===== -->
   <section class="py-20 sm:py-24 bg-gray-50">

@@ -1,7 +1,7 @@
 export const SITE_CONFIG = {
   title: 'miyadev',
   description: 'A fast, secure blog powered by Notion and Astro',
-  author: 'Your Name',
+  author: 'miyadev',
   lang: 'ja',
   ogImage: '/og-image.png',
 
