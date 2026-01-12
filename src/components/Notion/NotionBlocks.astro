@@ -218,6 +218,49 @@ function renderRichText(richText: any[]): string {
         case "divider":
           return <hr class="my-12 border-gray-200 border-t-2" />;
 
+        case "table":
+          if (!block.table.children) return null;
+          const hasColumnHeader = block.table.has_column_header;
+          const hasRowHeader = block.table.has_row_header;
+
+          return (
+            <div class="my-6 overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200 border border-gray-200 text-sm">
+                <tbody class="divide-y divide-gray-200 bg-white">
+                  {block.table.children.map(
+                    (rowBlock: any, rowIndex: number) => {
+                      if (rowBlock.type !== "table_row") return null;
+                      const cells = rowBlock.table_row.cells;
+
+                      return (
+                        <tr>
+                          {cells.map((cell: any[], cellIndex: number) => {
+                            const isHeader =
+                              (hasColumnHeader && rowIndex === 0) ||
+                              (hasRowHeader && cellIndex === 0);
+                            const CellTag = isHeader ? "th" : "td";
+                            const cellContent = renderRichText(cell);
+
+                            return (
+                              <CellTag
+                                class={`px-4 py-3 whitespace-pre-wrap ${
+                                  isHeader
+                                    ? "bg-gray-50 text-left font-semibold text-gray-900"
+                                    : "text-gray-700"
+                                }`}
+                                set:html={cellContent}
+                              />
+                            );
+                          })}
+                        </tr>
+                      );
+                    },
+                  )}
+                </tbody>
+              </table>
+            </div>
+          );
+
         default:
           return null;
       }

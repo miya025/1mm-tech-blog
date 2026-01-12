@@ -175,6 +175,9 @@ export async function getPageBlocks(pageId: string, env?: NotionEnv): Promise<No
       await processBlockImages(blocks);
     }
 
+    // テーブルブロックの子要素を取得
+    await processTableBlocks(blocks, env);
+
     return blocks;
   } catch (error) {
     console.error(`Failed to fetch blocks for page ${pageId}:`, error);
@@ -199,6 +202,33 @@ async function processBlockImages(blocks: NotionBlock[]): Promise<void> {
       }
     }
   }
+}
+
+/**
+ * テーブルブロックの子要素（行）を取得して結合
+ */
+async function processTableBlocks(blocks: NotionBlock[], env?: NotionEnv): Promise<void> {
+  const notion = getNotionClient(env);
+
+  // 再帰的に処理する必要がある場合はここを拡張するが、現在はトップレベルのテーブルのみ対応
+  // 必要であればブロック内も探索する
+  const tableBlocks = blocks.filter(b => b.type === 'table' && b.has_children);
+
+  await Promise.all(tableBlocks.map(async (block) => {
+    try {
+      const response = await notion.blocks.children.list({
+        block_id: block.id,
+        page_size: 100,
+      });
+
+      // tableオブジェクトにchildrenを追加
+      if (block.table) {
+        block.table.children = response.results;
+      }
+    } catch (error) {
+      console.error(`Failed to fetch table rows for block ${block.id}:`, error);
+    }
+  }));
 }
 
 /**
