@@ -385,21 +385,6 @@ const posts = await getPosts();
                         {post.excerpt}
                       </p>
                     )}
-
-                    {post.tags.length > 0 && (
-                      <div class="flex flex-wrap gap-2 mt-4">
-                        {post.tags.slice(0, 3).map((tag) => (
-                          <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
-                            #{tag}
-                          </span>
-                        ))}
-                        {post.tags.length > 3 && (
-                          <span class="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                            +{post.tags.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </a>
               </article>

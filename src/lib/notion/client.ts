@@ -328,11 +328,7 @@ async function parseNotionPage(page: PageObjectResponse, env?: NotionEnv): Promi
       ? dateProp.date.start
       : null;
 
-    // Tags
-    const tagsProp = properties.Tags;
-    const tags = tagsProp?.type === 'multi_select'
-      ? tagsProp.multi_select.map((tag) => tag.name)
-      : [];
+
 
     // Excerpt
     const excerptProp = properties.Excerpt;
@@ -396,7 +392,7 @@ async function parseNotionPage(page: PageObjectResponse, env?: NotionEnv): Promi
       slug,
       status,
       publishedDate,
-      tags,
+
       excerpt,
       coverImage,
       author,

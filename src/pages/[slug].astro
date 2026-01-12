@@ -43,21 +43,13 @@ const blocksAfterAd = adInsertIndex > 0 ? blocks.slice(adInsertIndex) : [];
   publishedTime={post.publishedDate || undefined}
   slug={post.slug}
   author={post.author || undefined}
-  tags={post.tags}
+
 >
   <article class="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm my-8 overflow-hidden">
     <!-- Header -->
     <header class="bg-gradient-to-b from-gray-50 to-white py-10 md:py-14 text-center border-b border-gray-100">
       <div class="max-w-3xl mx-auto px-4">
-        {post.tags.length > 0 && (
-          <div class="flex flex-wrap justify-center gap-2 mb-6">
-            {post.tags.map((tag) => (
-              <span class="px-3 py-1.5 bg-white text-blue-700 text-xs font-medium rounded-full border border-gray-200">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+
 
         <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-6 leading-tight text-gray-900">
           {post.title}

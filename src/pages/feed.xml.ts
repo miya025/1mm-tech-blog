@@ -22,9 +22,7 @@ export async function GET(context: APIContext) {
       description: post.excerpt || '',
       link: `/${post.slug}/`,
       // カスタムデータ
-      customData: post.tags.length > 0
-        ? `<category>${post.tags.join('</category><category>')}</category>`
-        : undefined,
+
     })),
 
     // オプション設定

@@ -1,7 +1,11 @@
 ---
-import Layout from '@/layouts/Layout.astro';
-import NotionBlocks from '@/components/Notion/NotionBlocks.astro';
-import { getPostBySlugForPreview, getPageBlocks, type NotionEnv } from '@/lib/notion/client';
+import Layout from "@/layouts/Layout.astro";
+import NotionBlocks from "@/components/Notion/NotionBlocks.astro";
+import {
+  getPostBySlugForPreview,
+  getPageBlocks,
+  type NotionEnv,
+} from "@/lib/notion/client";
 
 // SSR: 毎リクエスト時に実行 (プレビュー用なのでキャッシュしない)
 export const prerender = false;
@@ -13,13 +17,18 @@ export const prerender = false;
 function toProxyUrl(imageUrl: string | null, token: string): string | null {
   if (!imageUrl) return null;
   // ローカルパス（/images/...）やすでにプロキシ済みの場合はそのまま
-  if (imageUrl.startsWith('/')) return imageUrl;
+  if (imageUrl.startsWith("/")) return imageUrl;
   // Notion S3 URLをプロキシ経由に変換
   return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&token=${encodeURIComponent(token)}`;
 }
 
 // エラーレスポンスを返すヘルパー
-function errorResponse(title: string, message: string, details?: string, status = 500) {
+function errorResponse(
+  title: string,
+  message: string,
+  details?: string,
+  status = 500,
+) {
   return new Response(
     `<!DOCTYPE html>
 <html>
@@ -38,11 +47,11 @@ function errorResponse(title: string, message: string, details?: string, status 
   <div class="error">
     <h1>${title}</h1>
     <p>${message}</p>
-    ${details ? `<pre>${details}</pre>` : ''}
+    ${details ? `<pre>${details}</pre>` : ""}
   </div>
 </body>
 </html>`,
-    { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
 
@@ -52,39 +61,46 @@ let previewToken: string;
 
 try {
   const { slug } = Astro.params;
-  const token = Astro.url.searchParams.get('token');
-  previewToken = token || '';
+  const token = Astro.url.searchParams.get("token");
+  previewToken = token || "";
 
   // Cloudflare Pages では runtime.env から環境変数を取得
-  const runtime = (Astro.locals as { runtime?: { env?: Record<string, string> } }).runtime;
-  const PREVIEW_SECRET = runtime?.env?.PREVIEW_SECRET ?? import.meta.env.PREVIEW_SECRET;
+  const runtime = (
+    Astro.locals as { runtime?: { env?: Record<string, string> } }
+  ).runtime;
+  const PREVIEW_SECRET =
+    runtime?.env?.PREVIEW_SECRET ?? import.meta.env.PREVIEW_SECRET;
 
   // Notion API用の環境変数
-  const notionEnv: NotionEnv | undefined = runtime?.env ? {
-    NOTION_TOKEN: runtime.env.NOTION_TOKEN,
-    NOTION_DATABASE_ID: runtime.env.NOTION_DATABASE_ID,
-  } : undefined;
+  const notionEnv: NotionEnv | undefined = runtime?.env
+    ? {
+        NOTION_TOKEN: runtime.env.NOTION_TOKEN,
+        NOTION_DATABASE_ID: runtime.env.NOTION_DATABASE_ID,
+      }
+    : undefined;
 
   // デバッグ: 環境変数の存在確認
   const hasToken = !!(notionEnv?.NOTION_TOKEN || import.meta.env.NOTION_TOKEN);
-  const hasDbId = !!(notionEnv?.NOTION_DATABASE_ID || import.meta.env.NOTION_DATABASE_ID);
+  const hasDbId = !!(
+    notionEnv?.NOTION_DATABASE_ID || import.meta.env.NOTION_DATABASE_ID
+  );
 
   if (!hasToken || !hasDbId) {
     return errorResponse(
-      '環境変数エラー',
-      'Notion APIの環境変数が設定されていません',
-      `NOTION_TOKEN: ${hasToken ? '✓' : '✗'}\nNOTION_DATABASE_ID: ${hasDbId ? '✓' : '✗'}\nruntime.env exists: ${!!runtime?.env}`
+      "環境変数エラー",
+      "Notion APIの環境変数が設定されていません",
+      `NOTION_TOKEN: ${hasToken ? "✓" : "✗"}\nNOTION_DATABASE_ID: ${hasDbId ? "✓" : "✗"}\nruntime.env exists: ${!!runtime?.env}`,
     );
   }
 
   // 認証チェック
   if (!PREVIEW_SECRET || token !== PREVIEW_SECRET) {
-    return Astro.redirect('/api/preview?error=unauthorized');
+    return Astro.redirect("/api/preview?error=unauthorized");
   }
 
   // slugが存在しない場合
   if (!slug) {
-    return Astro.redirect('/');
+    return Astro.redirect("/");
   }
 
   // Notionから記事を取得 (Draft/Published問わず)
@@ -92,28 +108,27 @@ try {
 
   if (!post) {
     return errorResponse(
-      '記事が見つかりません',
+      "記事が見つかりません",
       `スラッグ "${slug}" に該当する記事がNotionに存在しません。`,
-      'Slugプロパティを確認してください。',
-      404
+      "Slugプロパティを確認してください。",
+      404,
     );
   }
 
   // ブロック（本文）を取得
   blocks = await getPageBlocks(post.id, notionEnv);
-
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   const stack = error instanceof Error ? error.stack : undefined;
   return errorResponse(
-    'プレビューエラー',
-    'プレビューの生成中にエラーが発生しました',
-    `Error: ${message}\n\n${stack || ''}`
+    "プレビューエラー",
+    "プレビューの生成中にエラーが発生しました",
+    `Error: ${message}\n\n${stack || ""}`,
   );
 }
 
 if (!post || !blocks) {
-  return errorResponse('予期しないエラー', 'データの取得に失敗しました');
+  return errorResponse("予期しないエラー", "データの取得に失敗しました");
 }
 ---
 
@@ -126,80 +141,131 @@ if (!post || !blocks) {
   slug={post.slug}
 >
   <!-- Preview Banner -->
-  <div class="bg-amber-500 text-amber-950 px-4 py-3 text-center font-medium sticky top-0 z-[100] shadow-md">
+  <div
+    class="bg-amber-500 text-amber-950 px-4 py-3 text-center font-medium sticky top-0 z-[100] shadow-md"
+  >
     <span class="inline-flex items-center gap-2">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+        ></path>
       </svg>
       Preview Mode — この記事は下書きです
-      {post.status === 'Draft' && <span class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full">Draft</span>}
+      {
+        post.status === "Draft" && (
+          <span class="bg-amber-600 text-white text-xs px-2 py-0.5 rounded-full">
+            Draft
+          </span>
+        )
+      }
     </span>
   </div>
 
-  <article class="max-w-4xl mx-auto px-4 py-8 md:py-12 bg-white rounded-2xl shadow-sm my-8">
+  <article
+    class="max-w-4xl mx-auto px-4 py-8 md:py-12 bg-white rounded-2xl shadow-sm my-8"
+  >
     <!-- Header -->
     <header class="mb-10">
-      {post.coverImage && (
-        <div class="aspect-[2/1] sm:aspect-video overflow-hidden rounded-2xl mb-8 shadow-lg">
-          <img
-            src={toProxyUrl(post.coverImage, previewToken) || post.coverImage}
-            alt={post.title}
-            class="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-            width="1200"
-            height="675"
-          />
-        </div>
-      )}
+      {
+        post.coverImage && (
+          <div class="aspect-[2/1] sm:aspect-video overflow-hidden rounded-2xl mb-8 shadow-lg">
+            <img
+              src={toProxyUrl(post.coverImage, previewToken) || post.coverImage}
+              alt={post.title}
+              class="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+              width="1200"
+              height="675"
+            />
+          </div>
+        )
+      }
 
       <div class="max-w-3xl mx-auto">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 leading-tight text-gray-900">
+        <h1
+          class="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-4 leading-tight text-gray-900"
+        >
           {post.title}
         </h1>
 
-        <div class="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-6">
-          {post.publishedDate && (
-            <time datetime={post.publishedDate} class="flex items-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              {new Date(post.publishedDate).toLocaleDateString('ja-JP', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </time>
-          )}
-          {post.author && (
-            <>
-              <span class="text-gray-400" aria-hidden="true">•</span>
-              <span class="flex items-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <div
+          class="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-6"
+        >
+          {
+            post.publishedDate && (
+              <time
+                datetime={post.publishedDate}
+                class="flex items-center gap-1.5"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
-                {post.author}
-              </span>
-            </>
-          )}
+                {new Date(post.publishedDate).toLocaleDateString("ja-JP", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </time>
+            )
+          }
+          {
+            post.author && (
+              <>
+                <span class="text-gray-400" aria-hidden="true">
+                  •
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  {post.author}
+                </span>
+              </>
+            )
+          }
         </div>
-
-        {post.tags.length > 0 && (
-          <div class="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span class="px-3 py-1.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full hover:bg-blue-100 transition-colors">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </header>
 
     <!-- Content -->
     <div class="max-w-3xl mx-auto">
-      <div class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md">
+      <div
+        class="prose prose-lg prose-gray max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-md"
+      >
         <NotionBlocks blocks={blocks} previewToken={previewToken} />
       </div>
     </div>
@@ -209,9 +275,15 @@ if (!post || !blocks) {
       <div class="bg-gray-100 rounded-lg p-4 text-sm text-gray-600">
         <p class="font-medium text-gray-800 mb-2">プレビューモードについて</p>
         <ul class="list-disc list-inside space-y-1">
-          <li>このページはプレビュー専用です。検索エンジンにはインデックスされません。</li>
-          <li>URLを共有すると、シークレットキーを知っている人だけが閲覧できます。</li>
-          <li>公開するには、NotionでStatusを「Published」に変更してください。</li>
+          <li>
+            このページはプレビュー専用です。検索エンジンにはインデックスされません。
+          </li>
+          <li>
+            URLを共有すると、シークレットキーを知っている人だけが閲覧できます。
+          </li>
+          <li>
+            公開するには、NotionでStatusを「Published」に変更してください。
+          </li>
         </ul>
       </div>
     </div>

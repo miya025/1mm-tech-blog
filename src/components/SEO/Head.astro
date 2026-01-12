@@ -1,6 +1,6 @@
 ---
-import { SITE_CONFIG } from '@/site-config';
-import JsonLD from './JsonLD.astro';
+import { SITE_CONFIG } from "@/site-config";
+import JsonLD from "./JsonLD.astro";
 
 interface Props {
   title?: string;
@@ -10,7 +10,6 @@ interface Props {
   publishedTime?: string;
   slug?: string;
   author?: string;
-  tags?: string[];
 }
 
 const {
@@ -21,11 +20,11 @@ const {
   publishedTime,
   slug,
   author,
-  tags = [],
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-const fullTitle = title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFIG.title}`;
+const fullTitle =
+  title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFIG.title}`;
 
 // OGP画像: 記事ページ（slugあり）はビルド時生成、それ以外は静的画像を使用
 const ogImageURL = slug
@@ -49,14 +48,21 @@ const ogImageURL = slug
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
 
 <!-- Open Graph / Facebook -->
-<meta property="og:type" content={article ? 'article' : 'website'} />
+<meta property="og:type" content={article ? "article" : "website"} />
 <meta property="og:url" content={canonicalURL} />
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImageURL} />
 <meta property="og:site_name" content={SITE_CONFIG.title} />
-<meta property="og:locale" content={SITE_CONFIG.lang === 'ja' ? 'ja_JP' : 'en_US'} />
-{article && publishedTime && <meta property="article:published_time" content={publishedTime} />}
+<meta
+  property="og:locale"
+  content={SITE_CONFIG.lang === "ja" ? "ja_JP" : "en_US"}
+/>
+{
+  article && publishedTime && (
+    <meta property="article:published_time" content={publishedTime} />
+  )
+}
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
@@ -72,19 +78,23 @@ const ogImageURL = slug
 <link rel="sitemap" href="/sitemap-index.xml" />
 
 <!-- RSS Feed -->
-<link rel="alternate" type="application/rss+xml" title={`${SITE_CONFIG.title} RSS Feed`} href="/feed.xml" />
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={`${SITE_CONFIG.title} RSS Feed`}
+  href="/feed.xml"
+/>
 
 <!-- Theme Color -->
 <meta name="theme-color" content="#ffffff" />
 
 <!-- JSON-LD Structured Data -->
 <JsonLD
-  type={article ? 'article' : 'website'}
+  type={article ? "article" : "website"}
   title={title}
   description={description}
   image={image}
   publishedTime={publishedTime}
   author={author}
   slug={slug}
-  tags={tags}
 />

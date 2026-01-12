@@ -19,7 +19,7 @@ export const NotionPostSchema = z.object({
   slug: z.string(),
   status: z.enum(['Draft', 'Published']),
   publishedDate: z.string().nullable(),
-  tags: z.array(z.string()),
+
   excerpt: z.string().nullable(),
   coverImage: z.string().nullable(),
   author: z.string().nullable(),
