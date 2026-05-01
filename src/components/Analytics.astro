@@ -32,7 +32,7 @@ const hasGTM = Boolean(gtmId);
 {/* Google Analytics 4 (gtag.js) */}
 {hasGA && !hasGTM && (
   <>
-    <script is:inline define:vars={{ gaId }} src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} async></script>
+    <script is:inline src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} async></script>
     <script is:inline define:vars={{ gaId }}>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}

@@ -22,7 +22,7 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, "") || "";
-const canonicalURL = slug ? `${siteUrl}/${slug}` : siteUrl;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
 
 // Organization schema (共通)
 const organizationSchema = {
@@ -32,11 +32,8 @@ const organizationSchema = {
   url: siteUrl,
   logo: {
     "@type": "ImageObject",
-    url: `${siteUrl}/favicon.svg`,
+    url: `${siteUrl}/favicon.png`,
   },
-  sameAs: [SITE_CONFIG.social.twitter, SITE_CONFIG.social.github].filter(
-    Boolean,
-  ),
 };
 
 // WebSite schema (トップページ用)

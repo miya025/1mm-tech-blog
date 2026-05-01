@@ -82,6 +82,9 @@ function renderRichText(richText: any[]): string {
       // それ以外のテキストもエスケープして安全にする
       let content = escapeHtml(text.plain_text);
 
+      // プレーンテキスト内に残っているMarkdownの **太字** を <strong> に変換
+      content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
       if (text.annotations.bold) content = `<strong>${content}</strong>`;
       if (text.annotations.italic) content = `<em>${content}</em>`;
       if (text.annotations.code)

@@ -12,8 +12,8 @@ export const SITE_CONFIG = {
 
   // Social Links
   social: {
-    twitter: 'https://twitter.com/yourusername',
-    github: 'https://github.com/yourusername',
+    twitter: '',
+    github: '',
   },
 
   // Cloudflare Image Resizing (Pro版機能)
