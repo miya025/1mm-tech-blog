@@ -1,5 +1,6 @@
 ---
 import { SITE_CONFIG } from "@/site-config";
+import { toCanonicalUrl } from "@/lib/seo/url";
 import JsonLD from "./JsonLD.astro";
 
 interface Props {
@@ -22,7 +23,7 @@ const {
   author,
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const canonicalURL = toCanonicalUrl(Astro.url.pathname, Astro.site);
 const fullTitle =
   title === SITE_CONFIG.title ? title : `${title} | ${SITE_CONFIG.title}`;
 

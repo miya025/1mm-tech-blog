@@ -1,5 +1,6 @@
 ---
 import { SITE_CONFIG } from "@/site-config";
+import { toCanonicalUrl } from "@/lib/seo/url";
 
 interface Props {
   type: "website" | "article";
@@ -22,7 +23,7 @@ const {
 } = Astro.props;
 
 const siteUrl = Astro.site?.toString().replace(/\/$/, "") || "";
-const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
+const canonicalURL = toCanonicalUrl(Astro.url.pathname, Astro.site);
 
 // Organization schema (共通)
 const organizationSchema = {
